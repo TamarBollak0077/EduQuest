@@ -25,7 +25,7 @@ declare global {
     __spinAudio?: HTMLAudioElement | null;
   }
 }
-export {};
+export { };
 
 // הגדרות גלובליות ל-TypeScript עבור window.__spinAudio ו-window.__victoryAudio
 declare global {
@@ -34,7 +34,7 @@ declare global {
     __spinAudio?: HTMLAudioElement | null;
   }
 }
-export {};
+export { };
 // Toast component
 function Toast({ message, color, type, onClose }: { message: string; color: string; type: "win" | "lose"; onClose: () => void }) {
   useEffect(() => {
@@ -119,6 +119,8 @@ const generateCards = (): Card[] => {
   return cards;
 };
 
+
+
 function App() {
   // טעינת מצב המשחק מה-localStorage אם קיים
   const loadGameState = () => {
@@ -155,6 +157,10 @@ function App() {
     turquoise: '#5ce1e6',
     '': '#aaa'
   };
+  // גלגל כיתות
+  const classNumbers = [1, 2, 3, 4, 5, 6, 7];
+  const [mustStartClassSpinning, setMustStartClassSpinning] = useState(false);
+  const [classPrizeNumber, setClassPrizeNumber] = useState<number>(0);
 
   const playSound = (type: "spin" | "lose" | "bonus" | "task" | "finishGame" | "click" | "ding") => {
     // שמור רפרנס ל-audio עבור צליל ניצחון
@@ -188,6 +194,23 @@ function App() {
     setPrizeNumber(newIndex);
     setMustStartSpinning(true);
     playSound("spin");
+  };
+
+  const handleClassSpinClick = () => {
+    let newIndex;
+    do {
+      newIndex = Math.floor(Math.random() * classNumbers.length);
+    } while (newIndex === classPrizeNumber && classNumbers.length > 1);
+    setClassPrizeNumber(newIndex);
+    setMustStartClassSpinning(true);
+    // Play spin sound in loop
+    if (window.__spinAudio && typeof window.__spinAudio.pause === "function") {
+      window.__spinAudio.pause();
+      window.__spinAudio.currentTime = 0;
+    }
+    window.__spinAudio = new Audio(`/sounds/spin.mp3`);
+    window.__spinAudio.loop = true;
+    window.__spinAudio.play();
   };
 
   const paintCard = (card: Card, isBonusSecondClick: boolean = false) => {
@@ -369,62 +392,96 @@ function App() {
         <img src={Logo} alt="לוגו" style={{ width: 120, height: 120, filter: 'drop-shadow(0 0 16px #fff) drop-shadow(0 0 32px #fff)' }} />
       </div>
       <div className="flex justify-center items-center" style={{ height: 180, width: 180, margin: '0 auto' }}>
-        {/* הגלגל הוסר מהמרכז */}
       </div>
-
-
       {/* כפתורים קבועים בפינה הימנית עליונה */}
-      <div className="fixed top-7 right-4 z-50 flex gap-3">
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '18px', paddingTop: 0, marginTop: 0 }}>
-          <div style={{ width: 90, maxWidth: '18vw', transform: 'scale(0.18)', marginTop: -200, marginRight: 30, paddingTop: 0 }}>
-            <div >
-              <Wheel
-                mustStartSpinning={mustStartSpinning}
-                prizeNumber={prizeNumber}
-                data={teams.map(team => ({}))}
-                backgroundColors={teams.map(team => toastColors[team])}
-                textColors={["#000"]}
-                pointerProps={{}}
-                onStopSpinning={() => {
-                  setMustStartSpinning(false);
-                  setCurrentTeam(teams[prizeNumber]);
-                  // Stop spin sound and play ding
-                  if (window.__spinAudio && typeof window.__spinAudio.pause === "function") {
-                    window.__spinAudio.pause();
-                    window.__spinAudio.currentTime = 0;
-                    window.__spinAudio = null;
-                  }
-                  playSound('ding');
-                }}
-              />
-            </div>
+      <div className="fixed top-7 right-4 z-50 flex gap-3 items-start">
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '18px', marginRight: '10px' }}>
+          {/* גלגל כיתות */}
+          <div style={{ width: 90, maxWidth: '18vw', transform: 'scale(0.18)', marginTop: -200 }}>
+            <Wheel
+              mustStartSpinning={mustStartClassSpinning}
+              prizeNumber={classPrizeNumber}
+              data={classNumbers.map(num => ({ option: num.toString() }))}
+              backgroundColors={["#facc15", "#5ce1e6", "#ff00aa", "#ff74d1ff", "#facc15", "#5ce1e6", "#ff00aa"]}
+              textColors={["#000"]}
+              fontSize={60}
+              onStopSpinning={() => {
+                setMustStartClassSpinning(false);
+                // Stop spin sound and play ding
+                if (window.__spinAudio && typeof window.__spinAudio.pause === "function") {
+                  window.__spinAudio.pause();
+                  window.__spinAudio.currentTime = 0;
+                  window.__spinAudio = null;
+                }
+                playSound('ding');
+              }}
+            />
           </div>
+          {/* גלגל קבוצות */}
+          <div style={{ width: 90, maxWidth: '18vw', transform: 'scale(0.18)', marginTop: -200 }}>
+            <Wheel
+              mustStartSpinning={mustStartSpinning}
+              prizeNumber={prizeNumber}
+              data={teams.map(() => ({ option: "" }))}
+              backgroundColors={teams.map(team => toastColors[team])}
+              textColors={["#000"]}
+              fontSize={32}
+              pointerProps={{}}
+              onStopSpinning={() => {
+                setMustStartSpinning(false);
+                setCurrentTeam(teams[prizeNumber]);
+                if (window.__spinAudio && typeof window.__spinAudio.pause === "function") {
+                  window.__spinAudio.pause();
+                  window.__spinAudio.currentTime = 0;
+                  window.__spinAudio = null;
+                }
+                playSound('ding');
+              }}
+            />
+          </div>
+          {/* כפתורים */}
+          {/* כפתור ניקוד */}
           <button
             onClick={() => setShowScore(true)}
-            className="px-3 py-2 rounded shadow hover:scale-105 transition flex items-center gap-2"
-            style={{ background: 'rgba(234, 40, 110, 1)', marginTop: 0, border: '2.5px solid rgba(255,255,255,0.8)', boxShadow: '0 0 18px 6px rgba(255,255,255,0.8)' }}
+            className="game-btn pink icon-btn"
+            style={{ marginLeft: 30 }}
             title="הצג ניקוד"
           >
-            <img src="/assets/high-score.png" alt="ניקוד" style={{ width: 24, height: 24, filter: 'drop-shadow(0 0 8px #fff) drop-shadow(0 0 16px #fff)' }} />
+            <img
+              src="/assets/high-score.png"
+              alt="ניקוד"
+              style={{ width: 26, height: 26 }}
+            />
           </button>
+
+          {/* גלגל כיתות */}
+          <button
+            onClick={handleClassSpinClick}
+            className="game-btn pink"
+            title="בחר כיתה"
+          >
+            סיבוב גלגל כיתות
+          </button>
+
+          {/* גלגל קבוצות */}
           <button
             onClick={handleSpinClick}
-            className="text-black px-4 py-2 rounded shadow hover:scale-105 transition font-bold"
-            style={{ background: 'rgba(234, 40, 110, 1)', fontSize: "16px", marginTop: 0, border: '2.5px solid rgba(255,255,255,0.8)', boxShadow: '0 0 18px 6px rgba(255,255,255,0.8)', textShadow: '0 0 12px #fff, 0 0 14px #fff, 1px 1px 0 #fff, -1px -1px 0 #fff' }}
-            title="סובב גלגל"
+            className="game-btn pink"
+            title="בחר קבוצה"
           >
-            סיבוב גלגל
+            סיבוב גלגל קבוצות
           </button>
+
+          {/* משחק חדש */}
           <button
             onClick={startNewGame}
-            className="text-black px-4 py-2 rounded shadow hover:scale-105 transition font-bold"
-            style={{ background: 'rgba(234, 40, 110, 1)', marginTop: 0, border: '2.5px solid rgba(255,255,255,0.8)', boxShadow: '0 0 18px 6px rgba(255,255,255,0.8)', textShadow: '0 0 12px #fff, 0 0 14px #fff, 1px 1px 0 #fff, -1px -1px 0 #fff' }}
+            className="game-btn pink"
             title="התחל משחק חדש"
           >
             משחק חדש
           </button>
-        </div>
 
+        </div>
       </div>
 
       {/* גריד קלפים */}

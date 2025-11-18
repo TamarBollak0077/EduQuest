@@ -87,3 +87,45 @@ html, body, #root {
 .animate-lose { animation: lose-pop 0.5s ease-in-out 2, subtle-pulse 1.2s ease-in-out infinite alternate; }
 .animate-bonus { animation: bonus-pop 0.7s ease-in-out 2, subtle-pulse 1.2s ease-in-out infinite alternate; }
 .animate-bounce-finish { animation-name: bounce-finish; animation-duration: 0.8s; animation-iteration-count: infinite; animation-timing-function: ease-in-out; animation-direction: alternate; }
+
+
+.game-btn {
+  padding: 10px 20px;
+  border-radius: 18px;
+  font-weight: 700;
+  font-size: 16px;
+  border: 2px solid rgba(255,255,255,0.8);
+  box-shadow: 0 0 12px rgba(255,255,255,0.7);
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
+  backdrop-filter: blur(3px);
+}
+
+.game-btn:hover {
+  transform: scale(1.07);
+  box-shadow: 0 0 20px rgba(255,255,255,1);
+}
+
+.game-btn:active {
+  transform: scale(0.97);
+}
+
+.game-btn.pink {
+  background: rgba(234, 40, 110, 0.9);
+  color: white;
+  text-shadow: 0 0 8px #fff;
+}
+
+.game-btn.teal {
+  background: rgba(92, 225, 230, 0.9);
+  color: black;
+  text-shadow: 0 0 6px rgba(255,255,255,0.7);
+}
+
+.game-btn.icon-btn {
+  padding: 6px 10px;
+  width: 52px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
