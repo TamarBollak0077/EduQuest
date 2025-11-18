@@ -1,0 +1,67 @@
+.App {
+  min-height: 100vh;
+  height: 100%;
+  width: 100%;
+  text-align: center;
+  cursor: url("/assets/brush-black.ico") 16 16, pointer ;
+}
+
+body {
+  cursor: url("/assets/brush-black.ico") 0 0, url("/assets/brush-pink.png") 0 0, auto;
+}
+
+.App-logo {
+  height: 40vmin;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .App-logo {
+    animation: App-logo-spin infinite 20s linear;
+  }
+}
+
+.App-header {
+  background-color: #282c34;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+  color: white;
+}
+
+.App-link {
+  color: #61dafb;
+}
+
+@keyframes App-logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.card {
+  position: relative;
+  overflow: hidden;
+  max-height: 100%;
+  max-width: 100%;
+  border-radius: 50% 30% 60% 20% / 30% 60% 20% 50%;
+  /* צורה אורגנית */
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  cursor: url("/assets/brush-pink-32.png") 16 16, pointer;
+}
+.cards-container {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+}

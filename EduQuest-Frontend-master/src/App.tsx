@@ -1,0 +1,536 @@
+import React, { useState, useEffect } from "react";
+// ...existing imports...
+import Modal from "./Modal";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Cell,
+} from "recharts";
+import { Wheel } from "react-custom-roulette";
+import Logo from './assets/Logo.png';
+import Pink from './assets/Pink.png';
+import Grey from './assets/Grey.png';
+import Turquoise from './assets/Turquoise.png';
+import Yellow from './assets/Yellow.png';
+
+// הגדרות גלובליות ל-TypeScript עבור window.__spinAudio ו-window.__victoryAudio
+declare global {
+  interface Window {
+    __victoryAudio?: HTMLAudioElement;
+    __spinAudio?: HTMLAudioElement | null;
+  }
+}
+export {};
+
+// הגדרות גלובליות ל-TypeScript עבור window.__spinAudio ו-window.__victoryAudio
+declare global {
+  interface Window {
+    __victoryAudio?: HTMLAudioElement;
+    __spinAudio?: HTMLAudioElement | null;
+  }
+}
+export {};
+// Toast component
+function Toast({ message, color, type, onClose }: { message: string; color: string; type: "win" | "lose"; onClose: () => void }) {
+  useEffect(() => {
+    const timer = setTimeout(onClose, 1200);
+    return () => clearTimeout(timer);
+  }, [onClose]);
+  return (
+    <div
+      className={`fixed left-1/2 top-12  px-7 py-4 rounded-xl shadow-2xl text-white text-2xl font-bold z-50 animate-toast-up flex items-center gap-3 ${type === "lose" ? "border-2 border-red-500" : "border-2 border-green-500"}`}
+      style={{ background: color, minWidth: 90, textAlign: 'center', boxShadow: '0 8px 32px rgba(0,0,0,0.18)' }}
+    >
+      {type === "lose" ? (
+        <span className="text-3xl">❌</span>
+      ) : (
+        <span className="text-3xl">✅</span>
+      )}
+      <span>{message}</span>
+    </div>
+  );
+}
+// Toast up animation
+const style = document.createElement('style');
+style.innerHTML = `
+@keyframes toast-up {
+  0% { transform: translateY(60px); opacity: 0; }
+  30% { opacity: 1; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+.animate-toast-up {
+  animation: toast-up 0.5s cubic-bezier(.68,-0.55,.27,1.55);
+}
+`;
+if (!document.head.querySelector('style[data-toast]')) {
+  style.setAttribute('data-toast', '');
+  document.head.appendChild(style);
+}
+
+
+type CardType = "task" | "extra" | "lose";
+type TeamColor = "pink" | "yellow" | "turquoise" | "";
+
+interface Card {
+  id: number;
+  type: CardType;
+  color: TeamColor;
+  revealed: boolean;
+  isBonusSecondClick?: boolean;
+}
+
+const colorClasses: Record<TeamColor, string> = {
+  pink: "bg-[#ff00aaff]",
+  yellow: "bg-yellow-400",
+  turquoise: "bg-cyan-400",
+  "": "bg-gray-300"
+};
+
+const teams: TeamColor[] = ["pink", "yellow", "turquoise"];
+const generateCards = (): Card[] => {
+  const totalCards = 30;
+  const maxLose = Math.floor(totalCards * 0.25); // עד 25%
+  let loseCount = 0;
+  const cards: Card[] = [];
+
+  for (let i = 0; i < totalCards; i++) {
+    let type: CardType;
+    const rand = Math.random();
+    if (rand < 0.25 && loseCount < maxLose) {
+      type = "lose";
+      loseCount++;
+    } else {
+      type = rand < 0.625 ? "task" : "extra";
+    }
+    cards.push({ id: i, type, color: "", revealed: false });
+  }
+
+  // ערבוב קלפים
+  for (let i = cards.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [cards[i], cards[j]] = [cards[j], cards[i]];
+  }
+
+  return cards;
+};
+
+function App() {
+  // טעינת מצב המשחק מה-localStorage אם קיים
+  const loadGameState = () => {
+    try {
+      const saved = localStorage.getItem('eduquest-game-state');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed.cards)) return parsed.cards;
+      }
+    } catch { }
+    return generateCards();
+  };
+  const [cards, setCards] = useState<Card[]>(loadGameState());
+  // שמירת מצב המשחק בכל שינוי
+  useEffect(() => {
+    localStorage.setItem('eduquest-game-state', JSON.stringify({ cards }));
+  }, [cards]);
+  const [currentTeam, setCurrentTeam] = useState<TeamColor>("");
+  // סטייט לשליטה על סיבוב הגלגל
+  const [mustStartSpinning, setMustStartSpinning] = useState(false);
+  const [prizeNumber, setPrizeNumber] = useState<number>(0);
+  const [modalMessage, setModalMessage] = useState<string>("");
+  const [bonusActive, setBonusActive] = useState<boolean>(false);
+  const [bonusCardId, setBonusCardId] = useState<number | null>(null);
+  const [turnQueue, setTurnQueue] = useState<TeamColor[]>([]);
+  const [toast, setToast] = useState<{ message: string; color: string; type: "win" | "lose" } | null>(null);
+  const [pendingToast, setPendingToast] = useState<{ message: string; color: string; type: "win" | "lose" } | null>(null);
+  // סטייט להצגת פופאפ ניקוד
+  const [showScore, setShowScore] = useState(false);
+  // צבעים לטוסט
+  const toastColors: Record<TeamColor, string> = {
+    pink: '#ff00aa',
+    yellow: '#facc15',
+    turquoise: '#5ce1e6',
+    '': '#aaa'
+  };
+
+  const playSound = (type: "spin" | "lose" | "bonus" | "task" | "finishGame" | "click" | "ding") => {
+    // שמור רפרנס ל-audio עבור צליל ניצחון
+    if (type === "finishGame") {
+      if (window.__victoryAudio && typeof window.__victoryAudio.pause === "function") {
+        window.__victoryAudio.pause();
+        window.__victoryAudio.currentTime = 0;
+      }
+      window.__victoryAudio = new Audio(`/sounds/${type}.mp3`);
+      window.__victoryAudio.play();
+    } else if (type === "spin") {
+      if (window.__spinAudio && typeof window.__spinAudio.pause === "function") {
+        window.__spinAudio.pause();
+        window.__spinAudio.currentTime = 0;
+      }
+      window.__spinAudio = new Audio(`/sounds/${type}.mp3`);
+      window.__spinAudio.loop = true;
+      window.__spinAudio.play();
+    } else {
+      const audio = new Audio(`/sounds/${type}.mp3`);
+      audio.play();
+    }
+  };
+
+  // פונקציה לסיבוב הגלגל
+  const handleSpinClick = () => {
+    let newIndex;
+    do {
+      newIndex = Math.floor(Math.random() * teams.length);
+    } while (newIndex === prizeNumber && teams.length > 1);
+    setPrizeNumber(newIndex);
+    setMustStartSpinning(true);
+    playSound("spin");
+  };
+
+  const paintCard = (card: Card, isBonusSecondClick: boolean = false) => {
+    setCards(cards.map(c => {
+      if (c.id !== card.id) return c;
+      if (card.type === "lose" && !isBonusSecondClick) {
+        // קלף הפסד שנבחר ראשון: שומר צבע קבוצה לניקוד, אבל ייראה שקוף ברנדר
+        return { ...c, color: currentTeam, revealed: true };
+      } else {
+        // כל שאר המקרים (כולל קלף הפסד שנבחר כקלף שני של בונוס): צובע
+        return { ...c, color: currentTeam, revealed: true, isBonusSecondClick };
+      }
+    }));
+  };
+
+  const handleCardClick = (card: Card) => {
+    // אפשר ללחוץ קלף שני של בונוס גם אם אין currentTeam
+    if ((currentTeam && !card.revealed) || (bonusActive && !card.revealed && card.id !== bonusCardId)) {
+      const isBonusSecondClick = bonusActive && card.id !== bonusCardId;
+      let toastMsg = "";
+      // צבע הטוסט והקלף השני של בונוס יהיה לפי הקבוצה של קלף הבונוס
+      let bonusTeam = currentTeam;
+      if (isBonusSecondClick && bonusCardId !== null) {
+        const bonusCard = cards.find(c => c.id === bonusCardId);
+        if (bonusCard && bonusCard.color) {
+          bonusTeam = bonusCard.color;
+        }
+      }
+      let toastColor = toastColors[bonusTeam];
+      let toastType: "win" | "lose" = "win";
+
+      if (isBonusSecondClick) {
+        playSound("click");
+        // צובע את הקלף השני של בונוס בצבע הקבוצה של קלף הבונוס
+        setCards(cards.map(c => {
+          if (c.id !== card.id) return c;
+          // קלף שני של בונוס: תמיד צובע, גם אם זה קלף הפסד
+          return { ...c, color: bonusTeam, revealed: true, isBonusSecondClick: true };
+        }));
+        toastMsg = `+1`;
+        toastType = "win";
+        setPendingToast({ message: toastMsg, color: toastColor, type: toastType });
+        setBonusActive(false);
+        setBonusCardId(null);
+        setCurrentTeam("");
+        return;
+      }
+
+      // קלף ראשון
+      if (card.type === "task" || card.type === "extra") {
+        playSound(card.type === "task" ? "task" : "bonus");
+        paintCard(card);
+        toastMsg = `+2`;
+        toastType = "win";
+        setPendingToast({ message: toastMsg, color: toastColor, type: toastType });
+        setModalMessage(card.type === "task" ? "כל הכבוד! והמשימה היא..." : " זכיתן בתור נוסף!");
+        if (card.type === "extra") {
+          setBonusActive(true);
+          setBonusCardId(card.id);
+        }
+        setCurrentTeam("");
+      } else if (card.type === "lose") {
+        playSound("lose");
+        paintCard(card); // revealed, כן צבע
+        toastMsg = `-2`;
+        toastType = "lose";
+        setPendingToast({ message: toastMsg, color: toastColor, type: toastType });
+        setModalMessage("אופססס! שטח שקוף");
+        setCurrentTeam("");
+      }
+    }
+  };
+  // Show toast only after modal closes
+  useEffect(() => {
+    if (!modalMessage && pendingToast) {
+      setToast(pendingToast);
+      setPendingToast(null);
+    }
+  }, [modalMessage, pendingToast]);
+  // ניקוד דינמי עם הורדה לקלף הפסד
+  const getTeamScore = (team: TeamColor) => {
+    let score = 0;
+    cards.forEach(card => {
+      if (card.color === team) {
+        if (card.isBonusSecondClick) {
+          // קלף שני שנבחר אחרי קלף בונוס
+          score += 1;
+        } else {
+          // קלף ראשון
+          if (card.type === "task" || card.type === "extra") {
+            score += 2;
+          } else if (card.type === "lose") {
+            score -= 2;
+          }
+        }
+      }
+    });
+    return score;
+  };
+
+  const getWinner = () => {
+    const counts = teams.map(t => ({ team: t, score: getTeamScore(t) }));
+    counts.sort((a, b) => b.score - a.score);
+    const maxScore = counts[0].score;
+    const winners = counts.filter(c => c.score === maxScore && maxScore > 0).map(c => c.team);
+
+    if (winners.length > 1) {
+      return `תיקו בין הקבוצות: ${winners.map(w => w.toUpperCase()).join(", ")}`;
+    }
+    return winners.length === 1 ? winners[0].toUpperCase() : "";
+  };
+
+  useEffect(() => {
+    const allClicked = cards.every(c => c.revealed);
+    if (allClicked && cards.length > 0) {
+      playSound("finishGame");
+      setModalMessage(`המשחק הסתיים! המנצחים הם: ${getWinner().toUpperCase()}`);
+      setCurrentTeam("");
+      setBonusActive(false);
+      setBonusCardId(null);
+    }
+  }, [cards]);
+
+  // פונקציה לקביעת אנימציות לכל קלף לפי סוגו ומצבו
+  const getCardAnimation = (
+    card: Card,
+    isBonusCard: boolean,
+    isBonusSecondClick: boolean,
+    gameFinished: boolean
+  ) => {
+    if (gameFinished) {
+      const delay = (Math.random() * 0.5).toFixed(2); // delay אקראי 0–0.5s
+      return `animate-bounce-finish` + ` style={{ animationDelay: '${delay}s' }}`;
+      // ב-React נשים את זה ישירות כ-style
+    }
+
+    if (isBonusCard) return "animate-bonus";
+    if (isBonusSecondClick) return "animate-color-pulse";
+    if (card.type === "task" && card.revealed) return "animate-task";
+    if (card.type === "lose" && card.revealed) return "animate-lose";
+
+    // קלפים צבועים בלבד
+    if (card.color !== "") return "animate-color-pulse";
+
+    return "";
+  };
+
+  const startNewGame = () => {
+    // עצור צליל ניצחון אם מתנגן
+    if (window.__victoryAudio && typeof window.__victoryAudio.pause === "function") {
+      window.__victoryAudio.pause();
+      window.__victoryAudio.currentTime = 0;
+    }
+    setCards(generateCards());
+    setCurrentTeam("");
+    setModalMessage("");
+    setBonusActive(false);
+    setBonusCardId(null);
+    setTurnQueue([]);
+    setToast(null);
+    setPendingToast(null);
+    localStorage.removeItem('eduquest-game-state');
+  };
+
+
+
+  return (
+    <div
+      className="relative p-6 min-h-screen overflow-hidden"
+      style={{
+        backgroundImage: 'url(/assets/background3.jpg)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+      }}
+    >
+      {/* לוגו בפינה השמאלית עליונה */}
+      <div className="fixed top-4 left-4 z-50">
+        <img src={Logo} alt="לוגו" style={{ width: 120, height: 120, filter: 'drop-shadow(0 0 16px #fff) drop-shadow(0 0 32px #fff)' }} />
+      </div>
+      <div className="flex justify-center items-center" style={{ height: 180, width: 180, margin: '0 auto' }}>
+        {/* הגלגל הוסר מהמרכז */}
+      </div>
+
+
+      {/* כפתורים קבועים בפינה הימנית עליונה */}
+      <div className="fixed top-7 right-4 z-50 flex gap-3">
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '18px', paddingTop: 0, marginTop: 0 }}>
+          <div style={{ width: 90, maxWidth: '18vw', transform: 'scale(0.18)', marginTop: -200, marginRight: 30, paddingTop: 0 }}>
+            <div >
+              <Wheel
+                mustStartSpinning={mustStartSpinning}
+                prizeNumber={prizeNumber}
+                data={teams.map(team => ({}))}
+                backgroundColors={teams.map(team => toastColors[team])}
+                textColors={["#000"]}
+                pointerProps={{}}
+                onStopSpinning={() => {
+                  setMustStartSpinning(false);
+                  setCurrentTeam(teams[prizeNumber]);
+                  // Stop spin sound and play ding
+                  if (window.__spinAudio && typeof window.__spinAudio.pause === "function") {
+                    window.__spinAudio.pause();
+                    window.__spinAudio.currentTime = 0;
+                    window.__spinAudio = null;
+                  }
+                  playSound('ding');
+                }}
+              />
+            </div>
+          </div>
+          <button
+            onClick={() => setShowScore(true)}
+            className="px-3 py-2 rounded shadow hover:scale-105 transition flex items-center gap-2"
+            style={{ background: 'rgba(234, 40, 110, 1)', marginTop: 0, border: '2.5px solid rgba(255,255,255,0.8)', boxShadow: '0 0 18px 6px rgba(255,255,255,0.8)' }}
+            title="הצג ניקוד"
+          >
+            <img src="/assets/high-score.png" alt="ניקוד" style={{ width: 24, height: 24, filter: 'drop-shadow(0 0 8px #fff) drop-shadow(0 0 16px #fff)' }} />
+          </button>
+          <button
+            onClick={handleSpinClick}
+            className="text-black px-4 py-2 rounded shadow hover:scale-105 transition font-bold"
+            style={{ background: 'rgba(234, 40, 110, 1)', fontSize: "16px", marginTop: 0, border: '2.5px solid rgba(255,255,255,0.8)', boxShadow: '0 0 18px 6px rgba(255,255,255,0.8)', textShadow: '0 0 12px #fff, 0 0 14px #fff, 1px 1px 0 #fff, -1px -1px 0 #fff' }}
+            title="סובב גלגל"
+          >
+            סיבוב גלגל
+          </button>
+          <button
+            onClick={startNewGame}
+            className="text-black px-4 py-2 rounded shadow hover:scale-105 transition font-bold"
+            style={{ background: 'rgba(234, 40, 110, 1)', marginTop: 0, border: '2.5px solid rgba(255,255,255,0.8)', boxShadow: '0 0 18px 6px rgba(255,255,255,0.8)', textShadow: '0 0 12px #fff, 0 0 14px #fff, 1px 1px 0 #fff, -1px -1px 0 #fff' }}
+            title="התחל משחק חדש"
+          >
+            משחק חדש
+          </button>
+        </div>
+
+      </div>
+
+      {/* גריד קלפים */}
+      <div className="grid grid-cols-6 gap-0 overflow-visible w-5/6 h-3/5 mx-auto">
+        {cards.map((card, idx) => {
+          const isBonusCard = bonusCardId === card.id;
+          const isBonusSecondClick = bonusActive && card.revealed && card.color !== "";
+          const gameFinished = cards.every(c => c.revealed || c.type === "lose");
+
+          // delay אקראי רק בסוף המשחק
+          const finishDelay = gameFinished ? `${(Math.random() * 0.5).toFixed(2)}s` : undefined;
+
+          // Determine smear image by card color
+          let smearImg = Grey;
+          // קלף הפסד שנבחר ראשון: שקוף תמיד
+          if (card.revealed && card.type === "lose" && !card.isBonusSecondClick) {
+            smearImg = ""; // שקוף
+          } else if (card.revealed && card.color === "pink") smearImg = Pink;
+          else if (card.revealed && card.color === "yellow") smearImg = Yellow;
+          else if (card.revealed && card.color === "turquoise") smearImg = Turquoise;
+
+          // Overlap rows: every row gets negative margin-top for tighter stacking
+          const row = Math.floor(idx / 6);
+          const overlapStyle = row > 0 ? { marginTop: '-4rem' } : {};
+
+          // Add random rotation and translation for more scattered look
+          // Use deterministic pseudo-random for consistent rendering
+          const rotation = ((idx * 37) % 30) - 15; // -15deg to +15deg
+          const tx = ((idx * 53) % 40) - 20; // -20px to +20px
+          const ty = ((idx * 97) % 40) - 20; // -20px to +20px
+          const transformStyle = `rotate(${rotation}deg) translate(${tx}px, ${ty}px)`;
+
+
+          return (
+            <button
+              key={card.id}
+              onClick={() => handleCardClick(card)}
+              className={`relative max-w-xs -mx-6 bg-transparent border-none outline-none hover:scale-105 transition-transform overflow-visible ${getCardAnimation(card, isBonusCard, isBonusSecondClick, gameFinished)}`}
+              style={{
+                ...(finishDelay ? { animationDelay: finishDelay } : {}),
+                ...overlapStyle,
+                filter: 'drop-shadow(0 0 16px #fc90d8ff) drop-shadow(0 0 32px #ff368aff)'
+              }}
+              tabIndex={0}
+            >
+              {smearImg !== "" ? (
+                <img src={smearImg} alt="מריחת צבע" className="w-full h-auto select-none" draggable={false} style={{ transform: transformStyle }} />
+              ) : (
+                <div style={{ width: '100%', height: '80px', opacity: 0 }} />
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* פופאפ ניקוד */}
+      {showScore && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30" onClick={() => setShowScore(false)}>
+          <div className="w-full max-w-md bg-white/90 backdrop-blur-md rounded-2xl p-6 shadow-2xl relative" onClick={e => e.stopPropagation()}>
+            <button className="absolute top-3 left-3 text-xl font-bold text-gray-500 hover:text-black" onClick={() => setShowScore(false)}>
+              ✕
+            </button>
+            <h2 className="text-2xl font-bold mb-4 text-center">🏆 נקודות</h2>
+            <div style={{ width: "100%", height: 220 }}>
+              <ResponsiveContainer width="100%" height={220}>
+                <BarChart
+                  data={[
+                    { name: "ורוד", score: getTeamScore("pink"), color: "#ff00aaff" },
+                    { name: "צהוב", score: getTeamScore("yellow"), color: "#facc15" },
+                    { name: "טורקיז", score: getTeamScore("turquoise"), color: "#5ce1e6" },
+                  ]}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#ddd" />
+                  <XAxis dataKey="name" tick={{ fill: "#444", fontSize: 14 }} />
+                  <YAxis tick={{ fill: "#444" }} />
+                  <Tooltip />
+                  <Bar
+                    dataKey="score"
+                    radius={[10, 10, 0, 0]}
+                    isAnimationActive={true}
+                    animationDuration={800}
+                  >
+                    {[
+                      { name: "ורוד", color: "#ff00aaff" },
+                      { name: "צהוב", color: "#facc15" },
+                      { name: "טורקיז", color: "#5ce1e6" }
+                    ].map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Toast */}
+      {toast && (
+        <Toast message={toast.message} color={toast.color} type={toast.type} onClose={() => setToast(null)} />
+      )}
+
+
+      {/* Modal */}
+      {modalMessage && <Modal message={modalMessage} onClose={() => setModalMessage("")} />}
+    </div >
+  );
+}
+
+export default App;
