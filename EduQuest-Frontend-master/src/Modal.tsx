@@ -3,9 +3,10 @@ import React from "react";
 interface ModalProps {
   message: string;
   onClose?: () => void;
-  showOptions?: boolean;   // אפשרות להראות כפתורי הצלחה/כישלון (לא בשימוש כרגע)
+  showOptions?: boolean;
   onSuccess?: () => void;
   onFail?: () => void;
+  groupColor?: string;
 }
 
 const Modal: React.FC<ModalProps> = ({
@@ -13,37 +14,88 @@ const Modal: React.FC<ModalProps> = ({
   onClose = () => {},
   showOptions,
   onSuccess,
-  onFail
-}) => (
-  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-    <div className="bg-white p-6 rounded-lg shadow-lg max-w-sm text-center">
-      <p className="mb-4">{message}</p>
+  onFail,
+  groupColor = ''
+}) => {
+  console.log('Modal groupColor:', groupColor);
+  return (
+  <div className="fixed inset-0 flex items-center justify-center z-50 backdrop-blur-sm bg-black/60">
+    
+    {/* קלוז שאפשר ללחוץ */}
+    <div
+      className="relative max-w-sm w-full p-6 rounded-2xl shadow-[0_0_25px_6px_rgba(255,255,255,0.5)] border-2 border-white/70 text-center animate-fadeIn"
+      style={groupColor.startsWith('linear-gradient')
+        ? { backgroundImage: groupColor }
+        : { background: groupColor || '#e5e7eb' }}
+    >
 
-      {showOptions ? (
-        <div className="flex justify-around">
+      {/* איקס לסגירה */}
+      <button
+        onClick={onClose}
+        className="absolute top-3 right-3 text-white text-xl font-bold drop-shadow-lg hover:scale-110 transition-transform"
+        aria-label="סגור"
+      >
+        ✕
+      </button>
+
+      {/* תוכן */}
+      <p className="text-white text-lg font-semibold drop-shadow-[0_0_6px_white]">
+        {message}
+      </p>
+
+      {/* כפתורי הצלחה/כישלון */}
+      {showOptions && (
+        <div className="flex justify-center gap-4 mt-8">
+
           <button
-            className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
             onClick={onSuccess}
+            className="
+              px-5 py-2
+              rounded-xl font-bold
+              bg-green-400
+              text-white
+              shadow-[0_0_12px_2px_white]
+              hover:bg-green-500 
+              hover:scale-105 
+              transition
+            "
           >
             הושלמה
           </button>
+
           <button
-            className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
             onClick={onFail}
+            className="
+              px-5 py-2
+              rounded-xl font-bold
+              bg-red-400
+              text-white
+              shadow-[0_0_12px_2px_white]
+              hover:bg-red-500 
+              hover:scale-105
+              transition
+            "
           >
             נכשלת
           </button>
+        
         </div>
-      ) : (
-        <button
-          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-          onClick={onClose}
-        >
-          סגור
-        </button>
       )}
     </div>
+
+    {/* אנימציה */}
+    <style>{`
+      @keyframes fadeIn {
+        from { opacity: 0; transform: scale(0.92); }
+        to   { opacity: 1; transform: scale(1); }
+      }
+      .animate-fadeIn {
+        animation: fadeIn 0.22s ease-out;
+      }
+    `}</style>
+
   </div>
-);
+  );
+}
 
 export default Modal;

@@ -143,6 +143,7 @@ function App() {
   const [mustStartSpinning, setMustStartSpinning] = useState(false);
   const [prizeNumber, setPrizeNumber] = useState<number>(0);
   const [modalMessage, setModalMessage] = useState<string>("");
+  const [modalTeam, setModalTeam] = useState<string>("");
   const [bonusActive, setBonusActive] = useState<boolean>(false);
   const [bonusCardId, setBonusCardId] = useState<number | null>(null);
   const [turnQueue, setTurnQueue] = useState<TeamColor[]>([]);
@@ -157,6 +158,16 @@ function App() {
     turquoise: '#5ce1e6',
     '': '#aaa'
   };
+
+  // צבעים למודל לפי קבוצה
+  const modalColors: Record<TeamColor, string> = {
+    pink: 'linear-gradient(to bottom, #ff90d8, #ff00aa)',
+    yellow: 'linear-gradient(to bottom, #fff7b2, #facc15)',
+    turquoise: 'linear-gradient(to bottom, #a7f3f3, #5ce1e6)',
+    '': 'linear-gradient(to bottom, #e5e7eb, #aaa)'
+  };
+
+  const currentGroupColor = modalColors[currentTeam];
   // גלגל כיתות
   const classNumbers = [1, 2, 3, 4, 5, 6, 7];
   const [mustStartClassSpinning, setMustStartClassSpinning] = useState(false);
@@ -266,7 +277,8 @@ function App() {
         toastMsg = `+2`;
         toastType = "win";
         setPendingToast({ message: toastMsg, color: toastColor, type: toastType });
-        setModalMessage(card.type === "task" ? "כל הכבוד! והמשימה היא..." : " זכיתן בתור נוסף!");
+  setModalMessage(card.type === "task" ? "...כל הכבוד! והמשימה היא" : " !זכיתן בתור נוסף");
+  setModalTeam(currentTeam);
         if (card.type === "extra") {
           setBonusActive(true);
           setBonusCardId(card.id);
@@ -278,7 +290,8 @@ function App() {
         toastMsg = `-2`;
         toastType = "lose";
         setPendingToast({ message: toastMsg, color: toastColor, type: toastType });
-        setModalMessage("אופססס! שטח שקוף");
+  setModalMessage("אופססס! שטח שקוף");
+  setModalTeam(currentTeam);
         setCurrentTeam("");
       }
     }
@@ -327,7 +340,30 @@ function App() {
     const allClicked = cards.every(c => c.revealed);
     if (allClicked && cards.length > 0) {
       playSound("finishGame");
-      setModalMessage(`המשחק הסתיים! המנצחים הם: ${getWinner().toUpperCase()}`);
+      const counts = teams.map(t => ({ team: t, score: getTeamScore(t) }));
+      counts.sort((a, b) => b.score - a.score);
+      const maxScore = counts[0].score;
+      const winners = counts.filter(c => c.score === maxScore && maxScore > 0).map(c => c.team);
+      let modalColor = '';
+      if (winners.length === 1) {
+        // קבוצה אחת מנצחת
+        modalColor = modalColors[winners[0]];
+      } else if (winners.length > 1) {
+        // תיקו בין קבוצות
+        const colors = winners.map(w => {
+          // הפוך לגרדיאנט צבעים
+          if (w === 'pink') return '#ff00aa';
+          if (w === 'yellow') return '#facc15';
+          if (w === 'turquoise') return '#5ce1e6';
+          return '#aaa';
+        });
+        modalColor = `linear-gradient(90deg, ${colors.join(', ')})`;
+      } else {
+        modalColor = modalColors[''];
+      }
+  const teamNames: Record<TeamColor, string> = { pink: 'ורוד', yellow: 'צהוב', turquoise: 'טורקיז', '': '' };
+  setModalMessage(`המשחק הסתיים! ${winners.length === 1 ? `הקבוצה המנצחת: ${teamNames[winners[0]]}` : 'תיקו בין הקבוצות: ' + winners.map(w => teamNames[w]).join(", ")}`);
+      setModalTeam(modalColor);
       setCurrentTeam("");
       setBonusActive(false);
       setBonusCardId(null);
@@ -429,7 +465,7 @@ function App() {
               textColors={["#000"]}
               fontSize={32}
               pointerProps={{}}
-              spinDuration={0.4}
+              spinDuration={0.3}
               onStopSpinning={() => {
                 setMustStartSpinning(false);
                 setCurrentTeam(teams[prizeNumber]);
@@ -588,7 +624,7 @@ function App() {
 
 
       {/* Modal */}
-      {modalMessage && <Modal message={modalMessage} onClose={() => setModalMessage("")} />}
+  {modalMessage && <Modal message={modalMessage} onClose={() => setModalMessage("")} groupColor={modalTeam} />}
     </div >
   );
 }
