@@ -405,6 +405,8 @@ function App() {
               backgroundColors={["#facc15", "#5ce1e6", "#ff00aa", "#ff74d1ff", "#facc15", "#5ce1e6", "#ff00aa"]}
               textColors={["#000"]}
               fontSize={60}
+              spinDuration={0.5}
+
               onStopSpinning={() => {
                 setMustStartClassSpinning(false);
                 // Stop spin sound and play ding
@@ -427,6 +429,7 @@ function App() {
               textColors={["#000"]}
               fontSize={32}
               pointerProps={{}}
+              spinDuration={0.4}
               onStopSpinning={() => {
                 setMustStartSpinning(false);
                 setCurrentTeam(teams[prizeNumber]);
