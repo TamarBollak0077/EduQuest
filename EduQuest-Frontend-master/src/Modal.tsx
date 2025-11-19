@@ -18,16 +18,21 @@ const Modal: React.FC<ModalProps> = ({
   groupColor = ''
 }) => {
   console.log('Modal groupColor:', groupColor);
+  // ממפה שם צבע לערך HEX
+  const colorMap: Record<string, string> = {
+    pink: '#ff00aa',
+    yellow: '#facc15',
+    turquoise: '#5ce1e6',
+    '': '#e5e7eb'
+  };
+  const modalBg = colorMap[groupColor] || groupColor || '#e5e7eb';
   return (
-  <div className="fixed inset-0 flex items-center justify-center z-50 backdrop-blur-sm bg-black/60">
-    
-    {/* קלוז שאפשר ללחוץ */}
-    <div
-      className="relative max-w-sm w-full p-6 rounded-2xl shadow-[0_0_25px_6px_rgba(255,255,255,0.5)] border-2 border-white/70 text-center animate-fadeIn"
-      style={groupColor.startsWith('linear-gradient')
-        ? { backgroundImage: groupColor }
-        : { background: groupColor || '#e5e7eb' }}
-    >
+    <div className="fixed inset-0 flex items-center justify-center z-50 backdrop-blur-sm bg-black/60">
+      {/* קלוז שאפשר ללחוץ */}
+      <div
+        className="relative max-w-sm w-full p-6 rounded-2xl shadow-[0_0_25px_6px_rgba(255,255,255,0.5)] border-2 border-white/70 text-center animate-fadeIn"
+        style={{ background: modalBg }}
+      >
 
       {/* איקס לסגירה */}
       <button

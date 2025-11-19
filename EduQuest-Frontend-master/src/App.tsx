@@ -17,6 +17,7 @@ import Pink from './assets/Pink.png';
 import Grey from './assets/Grey.png';
 import Turquoise from './assets/Turquoise.png';
 import Yellow from './assets/Yellow.png';
+import CardsGrid from './components/CardsGrid';
 
 // הגדרות גלובליות ל-TypeScript עבור window.__spinAudio ו-window.__victoryAudio
 declare global {
@@ -73,10 +74,10 @@ if (!document.head.querySelector('style[data-toast]')) {
 }
 
 
-type CardType = "task" | "extra" | "lose";
-type TeamColor = "pink" | "yellow" | "turquoise" | "";
+export type CardType = "task" | "extra" | "lose";
+export type TeamColor = "pink" | "yellow" | "turquoise" | "";
 
-interface Card {
+export interface Card {
   id: number;
   type: CardType;
   color: TeamColor;
@@ -84,12 +85,12 @@ interface Card {
   isBonusSecondClick?: boolean;
 }
 
-const colorClasses: Record<TeamColor, string> = {
-  pink: "bg-[#ff00aaff]",
-  yellow: "bg-yellow-400",
-  turquoise: "bg-cyan-400",
-  "": "bg-gray-300"
-};
+// const colorClasses: Record<TeamColor, string> = {
+//   pink: "bg-[#ff00aaff]",
+//   yellow: "bg-yellow-400",
+//   turquoise: "bg-cyan-400",
+//   "": "bg-gray-300"
+// };
 
 const teams: TeamColor[] = ["pink", "yellow", "turquoise"];
 const generateCards = (): Card[] => {
@@ -113,7 +114,6 @@ const generateCards = (): Card[] => {
   // ערבוב קלפים
   for (let i = cards.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
-    [cards[i], cards[j]] = [cards[j], cards[i]];
   }
 
   return cards;
@@ -160,12 +160,7 @@ function App() {
   };
 
   // צבעים למודל לפי קבוצה
-  const modalColors: Record<TeamColor, string> = {
-    pink: 'linear-gradient(to bottom, #ff90d8, #ff00aa)',
-    yellow: 'linear-gradient(to bottom, #fff7b2, #facc15)',
-    turquoise: 'linear-gradient(to bottom, #a7f3f3, #5ce1e6)',
-    '': 'linear-gradient(to bottom, #e5e7eb, #aaa)'
-  };
+  const modalColors: Record<TeamColor, string> = { ...toastColors };
 
   const currentGroupColor = modalColors[currentTeam];
   // גלגל כיתות
@@ -524,56 +519,17 @@ function App() {
       </div>
 
       {/* גריד קלפים */}
-      <div className="grid grid-cols-6 gap-0 overflow-visible w-5/6 h-3/5 mx-auto">
-        {cards.map((card, idx) => {
-          const isBonusCard = bonusCardId === card.id;
-          const isBonusSecondClick = bonusActive && card.revealed && card.color !== "";
-          const gameFinished = cards.every(c => c.revealed || c.type === "lose");
-
-          // delay אקראי רק בסוף המשחק
-          const finishDelay = gameFinished ? `${(Math.random() * 0.5).toFixed(2)}s` : undefined;
-
-          // Determine smear image by card color
-          let smearImg = Grey;
-          // קלף הפסד שנבחר ראשון: שקוף תמיד
-          if (card.revealed && card.type === "lose" && !card.isBonusSecondClick) {
-            smearImg = ""; // שקוף
-          } else if (card.revealed && card.color === "pink") smearImg = Pink;
-          else if (card.revealed && card.color === "yellow") smearImg = Yellow;
-          else if (card.revealed && card.color === "turquoise") smearImg = Turquoise;
-
-          // Overlap rows: every row gets negative margin-top for tighter stacking
-          const row = Math.floor(idx / 6);
-          const overlapStyle = row > 0 ? { marginTop: '-4rem' } : {};
-
-          // Add random rotation and translation for more scattered look
-          // Use deterministic pseudo-random for consistent rendering
-          const rotation = ((idx * 37) % 30) - 15; // -15deg to +15deg
-          const tx = ((idx * 53) % 40) - 20; // -20px to +20px
-          const ty = ((idx * 97) % 40) - 20; // -20px to +20px
-          const transformStyle = `rotate(${rotation}deg) translate(${tx}px, ${ty}px)`;
-
-
-          return (
-            <button
-              key={card.id}
-              onClick={() => handleCardClick(card)}
-              className={`relative max-w-xs -mx-6 bg-transparent border-none outline-none hover:scale-105 transition-transform overflow-visible ${getCardAnimation(card, isBonusCard, isBonusSecondClick, gameFinished)}`}
-              style={{
-                ...(finishDelay ? { animationDelay: finishDelay } : {}),
-                ...overlapStyle,
-                filter: 'drop-shadow(0 0 16px #fc90d8ff) drop-shadow(0 0 32px #ff368aff)'
-              }}
-              tabIndex={0}
-            >
-              {smearImg !== "" ? (
-                <img src={smearImg} alt="מריחת צבע" className="w-full h-auto select-none" draggable={false} style={{ transform: transformStyle }} />
-              ) : (
-                <div style={{ width: '100%', height: '80px', opacity: 0 }} />
-              )}
-            </button>
-          );
-        })}
+      <div className="flex justify-center items-center w-full">
+        <CardsGrid
+          cards={cards}
+          bonusCardId={bonusCardId}
+          bonusActive={bonusActive}
+          handleCardClick={handleCardClick}
+          Pink={Pink}
+          Yellow={Yellow}
+          Turquoise={Turquoise}
+          Grey={Grey}
+        />
       </div>
 
       {/* פופאפ ניקוד */}
