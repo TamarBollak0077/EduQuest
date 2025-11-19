@@ -10,6 +10,7 @@ import GroupWheel from './components/GroupWheel';
 import ClassWheel from './components/ClassWheel';
 import Toast from './components/Toast';
 import ScoreModal from './components/ScoreModal';
+import ActionButtons from './components/ActionButtons';
 
 // הגדרות גלובליות ל-TypeScript עבור window.__spinAudio ו-window.__victoryAudio
 declare global {
@@ -389,46 +390,12 @@ function App() {
             />
           </div>
           {/* כפתורים */}
-          {/* כפתור ניקוד */}
-          <button
-            onClick={() => setShowScore(true)}
-            className="game-btn pink icon-btn"
-            style={{ marginLeft: 30 }}
-            title="הצג ניקוד"
-          >
-            <img
-              src="/assets/high-score.png"
-              alt="ניקוד"
-              style={{ width: 26, height: 26 }}
-            />
-          </button>
-
-          {/* גלגל כיתות */}
-          <button
-            onClick={handleClassSpinClick}
-            className="game-btn pink"
-            title="בחר כיתה"
-          >
-            סיבוב גלגל כיתות
-          </button>
-
-          {/* גלגל קבוצות */}
-          <button
-            onClick={handleSpinClick}
-            className="game-btn pink"
-            title="בחר קבוצה"
-          >
-            סיבוב גלגל קבוצות
-          </button>
-
-          {/* משחק חדש */}
-          <button
-            onClick={startNewGame}
-            className="game-btn pink"
-            title="התחל משחק חדש"
-          >
-            משחק חדש
-          </button>
+          <ActionButtons
+            onShowScore={() => setShowScore(true)}
+            onClassSpin={handleClassSpinClick}
+            onGroupSpin={handleSpinClick}
+            onNewGame={startNewGame}
+          />
 
         </div>
       </div>
