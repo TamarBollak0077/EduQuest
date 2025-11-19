@@ -1,17 +1,5 @@
-import React, { useState, useEffect } from "react";
-// ...existing imports...
+import { useState, useEffect } from "react";
 import Modal from "./Modal";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Cell,
-} from "recharts";
-import { Wheel } from "react-custom-roulette";
 import Logo from './assets/Logo.png';
 import Pink from './assets/Pink.png';
 import Grey from './assets/Grey.png';
@@ -53,17 +41,10 @@ export interface Card {
   isBonusSecondClick?: boolean;
 }
 
-// const colorClasses: Record<TeamColor, string> = {
-//   pink: "bg-[#ff00aaff]",
-//   yellow: "bg-yellow-400",
-//   turquoise: "bg-cyan-400",
-//   "": "bg-gray-300"
-// };
-
 const teams: TeamColor[] = ["pink", "yellow", "turquoise"];
 const generateCards = (): Card[] => {
   const totalCards = 30;
-  const maxLose = Math.floor(totalCards * 0.25); // עד 25%
+  const maxLose = Math.floor(totalCards * 0.25); 
   let loseCount = 0;
   const cards: Card[] = [];
 
@@ -332,30 +313,6 @@ function App() {
       setBonusCardId(null);
     }
   }, [cards]);
-
-  // פונקציה לקביעת אנימציות לכל קלף לפי סוגו ומצבו
-  const getCardAnimation = (
-    card: Card,
-    isBonusCard: boolean,
-    isBonusSecondClick: boolean,
-    gameFinished: boolean
-  ) => {
-    if (gameFinished) {
-      const delay = (Math.random() * 0.5).toFixed(2); // delay אקראי 0–0.5s
-      return `animate-bounce-finish` + ` style={{ animationDelay: '${delay}s' }}`;
-      // ב-React נשים את זה ישירות כ-style
-    }
-
-    if (isBonusCard) return "animate-bonus";
-    if (isBonusSecondClick) return "animate-color-pulse";
-    if (card.type === "task" && card.revealed) return "animate-task";
-    if (card.type === "lose" && card.revealed) return "animate-lose";
-
-    // קלפים צבועים בלבד
-    if (card.color !== "") return "animate-color-pulse";
-
-    return "";
-  };
 
   const startNewGame = () => {
     // עצור צליל ניצחון אם מתנגן
