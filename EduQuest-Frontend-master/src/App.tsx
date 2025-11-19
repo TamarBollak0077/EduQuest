@@ -1,4 +1,7 @@
 import { useState, useEffect } from "react";
+import { useToast } from "./hooks/useToast";
+import { useModal } from "./hooks/useModal";
+import { playSound } from "./utils/sound";
 import { useGameLogic, teams } from "./hooks/useGameLogic";
 import Modal from "./Modal";
 import Logo from './assets/Logo.png';
@@ -30,8 +33,6 @@ declare global {
   }
 }
 export { };
-
-
 export type CardType = "task" | "extra" | "lose";
 export type TeamColor = "pink" | "yellow" | "turquoise" | "";
 
@@ -42,9 +43,6 @@ export interface Card {
   revealed: boolean;
   isBonusSecondClick?: boolean;
 }
-
-// ...existing code...
-
 
 function App() {
   // לוגיקת המשחק מופרדת ל-hook
@@ -61,13 +59,22 @@ function App() {
   // סטייט לשליטה על סיבוב הגלגל
   const [mustStartSpinning, setMustStartSpinning] = useState(false);
   const [prizeNumber, setPrizeNumber] = useState<number>(0);
-  const [modalMessage, setModalMessage] = useState<string>("");
-  const [modalTeam, setModalTeam] = useState<string>("");
+  const {
+    modalMessage,
+    setModalMessage,
+    modalTeam,
+    setModalTeam,
+  } = useModal();
   const [bonusActive, setBonusActive] = useState<boolean>(false);
   const [bonusCardId, setBonusCardId] = useState<number | null>(null);
   const [turnQueue, setTurnQueue] = useState<TeamColor[]>([]);
-  const [toast, setToast] = useState<{ message: string; color: string; type: "win" | "lose" } | null>(null);
-  const [pendingToast, setPendingToast] = useState<{ message: string; color: string; type: "win" | "lose" } | null>(null);
+  const {
+    toast,
+    setToast,
+    pendingToast,
+    setPendingToast,
+    showToastAfterModal,
+  } = useToast();
   // סטייט להצגת פופאפ ניקוד
   const [showScore, setShowScore] = useState(false);
   // צבעים לטוסט
@@ -87,28 +94,7 @@ function App() {
   const [mustStartClassSpinning, setMustStartClassSpinning] = useState(false);
   const [classPrizeNumber, setClassPrizeNumber] = useState<number>(0);
 
-  const playSound = (type: "spin" | "lose" | "bonus" | "task" | "finishGame" | "click" | "ding") => {
-    // שמור רפרנס ל-audio עבור צליל ניצחון
-    if (type === "finishGame") {
-      if (window.__victoryAudio && typeof window.__victoryAudio.pause === "function") {
-        window.__victoryAudio.pause();
-        window.__victoryAudio.currentTime = 0;
-      }
-      window.__victoryAudio = new Audio(`/sounds/${type}.mp3`);
-      window.__victoryAudio.play();
-    } else if (type === "spin") {
-      if (window.__spinAudio && typeof window.__spinAudio.pause === "function") {
-        window.__spinAudio.pause();
-        window.__spinAudio.currentTime = 0;
-      }
-      window.__spinAudio = new Audio(`/sounds/${type}.mp3`);
-      window.__spinAudio.loop = true;
-      window.__spinAudio.play();
-    } else {
-      const audio = new Audio(`/sounds/${type}.mp3`);
-      audio.play();
-    }
-  };
+  // פונקציית playSound הועברה ל-utils/sound.ts
 
   // פונקציה לסיבוב הגלגל
   const handleSpinClick = () => {
@@ -137,8 +123,6 @@ function App() {
     window.__spinAudio.loop = true;
     window.__spinAudio.play();
   };
-
-  // ...existing code...
 
   const handleCardClick = (card: Card) => {
     // אפשר ללחוץ קלף שני של בונוס גם אם אין currentTeam
@@ -201,13 +185,8 @@ function App() {
   };
   // Show toast only after modal closes
   useEffect(() => {
-    if (!modalMessage && pendingToast) {
-      setToast(pendingToast);
-      setPendingToast(null);
-    }
-  }, [modalMessage, pendingToast]);
-  // ניקוד דינמי עם הורדה לקלף הפסד
-  // ...existing code...
+    showToastAfterModal(!!modalMessage);
+  }, [modalMessage, pendingToast, showToastAfterModal]);
 
   useEffect(() => {
     const allClicked = cards.every(c => c.revealed);
@@ -242,10 +221,6 @@ function App() {
       setBonusCardId(null);
     }
   }, [cards]);
-
-  // ...existing code...
-
-
 
   return (
     <div
@@ -309,10 +284,8 @@ function App() {
             onGroupSpin={handleSpinClick}
             onNewGame={startNewGame}
           />
-
         </div>
       </div>
-
       {/* גריד קלפים */}
       <div className="flex justify-center items-center w-full">
         <CardsGrid
@@ -326,15 +299,12 @@ function App() {
           Grey={Grey}
         />
       </div>
-
       {/* פופאפ ניקוד */}
   <ScoreModal showScore={showScore} setShowScore={setShowScore} getTeamScore={getTeamScore} />
       {/* Toast */}
       {toast && (
         <Toast message={toast.message} color={toast.color} type={toast.type} onClose={() => setToast(null)} />
       )}
-
-
       {/* Modal */}
   {modalMessage && <Modal message={modalMessage} onClose={() => setModalMessage("")} groupColor={modalTeam} />}
     </div >
