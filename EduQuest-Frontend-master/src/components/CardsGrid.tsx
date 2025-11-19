@@ -32,7 +32,7 @@ const CardsGrid: React.FC<CardsGridProps> = ({ cards, bonusCardId, bonusActive, 
       const tx = ((idx * 53) % 40) - 20;
       const ty = ((idx * 97) % 40) - 20;
       const transformStyle = `rotate(${rotation}deg) translate(${tx}px, ${ty}px)`;
-      // קבלת מחלקת האנימציה מהפונקציה המקורית
+  // Get animation class from original function
       // יש לייבא getCardAnimation מ-App אם צריך, או להעתיק את הלוגיקה כאן
       // כאן נניח שמועבר כ-prop או נעתיק את הלוגיקה
       // לצורך הדגמה, נניח שמועבר כ-prop בשם animationClass

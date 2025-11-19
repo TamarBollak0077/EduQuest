@@ -16,7 +16,7 @@ import Toast from './components/Toast';
 import ScoreModal from './components/ScoreModal';
 import ActionButtons from './components/ActionButtons';
 
-// הגדרות גלובליות ל-TypeScript עבור window.__spinAudio ו-window.__victoryAudio
+// Global TypeScript definitions for window.__spinAudio and window.__victoryAudio
 declare global {
   interface Window {
     __victoryAudio?: HTMLAudioElement;
@@ -25,7 +25,7 @@ declare global {
 }
 export { };
 
-// הגדרות גלובליות ל-TypeScript עבור window.__spinAudio ו-window.__victoryAudio
+// Global TypeScript definitions for window.__spinAudio and window.__victoryAudio
 declare global {
   interface Window {
     __victoryAudio?: HTMLAudioElement;
@@ -45,7 +45,7 @@ export interface Card {
 }
 
 function App() {
-  // לוגיקת המשחק מופרדת ל-hook
+  // Game logic separated to hook
   const {
     cards,
     setCards,
@@ -56,7 +56,7 @@ function App() {
     startNewGame,
   } = useGameLogic();
   const [currentTeam, setCurrentTeam] = useState<TeamColor>("");
-  // סטייט לשליטה על סיבוב הגלגל
+  // State for controlling wheel spin
   const [mustStartSpinning, setMustStartSpinning] = useState(false);
   const [prizeNumber, setPrizeNumber] = useState<number>(0);
   const {
@@ -75,9 +75,9 @@ function App() {
     setPendingToast,
     showToastAfterModal,
   } = useToast();
-  // סטייט להצגת פופאפ ניקוד
+  // State for showing score popup
   const [showScore, setShowScore] = useState(false);
-  // צבעים לטוסט
+  // Toast colors
   const toastColors: Record<TeamColor, string> = {
     pink: '#ff00aa',
     yellow: '#facc15',
@@ -85,18 +85,18 @@ function App() {
     '': '#aaa'
   };
 
-  // צבעים למודל לפי קבוצה
+  // Modal colors by team
   const modalColors: Record<TeamColor, string> = { ...toastColors };
 
   const currentGroupColor = modalColors[currentTeam];
-  // גלגל כיתות
+  // Class wheel
   const classNumbers = [1, 2, 3, 4, 5, 6, 7];
   const [mustStartClassSpinning, setMustStartClassSpinning] = useState(false);
   const [classPrizeNumber, setClassPrizeNumber] = useState<number>(0);
 
-  // פונקציית playSound הועברה ל-utils/sound.ts
+  // playSound function moved to utils/sound.ts
 
-  // פונקציה לסיבוב הגלגל
+  // Function to spin the wheel
   const handleSpinClick = () => {
     let newIndex;
     do {
@@ -114,7 +114,7 @@ function App() {
     } while (newIndex === classPrizeNumber && classNumbers.length > 1);
     setClassPrizeNumber(newIndex);
     setMustStartClassSpinning(true);
-    // Play spin sound in loop
+  // Play spin sound in loop
     if (window.__spinAudio && typeof window.__spinAudio.pause === "function") {
       window.__spinAudio.pause();
       window.__spinAudio.currentTime = 0;
@@ -125,11 +125,11 @@ function App() {
   };
 
   const handleCardClick = (card: Card) => {
-    // אפשר ללחוץ קלף שני של בונוס גם אם אין currentTeam
+  // Can click second bonus card even if no currentTeam
     if ((currentTeam && !card.revealed) || (bonusActive && !card.revealed && card.id !== bonusCardId)) {
       const isBonusSecondClick = bonusActive && card.id !== bonusCardId;
       let toastMsg = "";
-      // צבע הטוסט והקלף השני של בונוס יהיה לפי הקבוצה של קלף הבונוס
+  // Toast color and second bonus card color are based on bonus card's team
       let bonusTeam = currentTeam;
       if (isBonusSecondClick && bonusCardId !== null) {
         const bonusCard = cards.find(c => c.id === bonusCardId);
@@ -142,10 +142,10 @@ function App() {
 
       if (isBonusSecondClick) {
         playSound("click");
-        // צובע את הקלף השני של בונוס בצבע הקבוצה של קלף הבונוס
+  // Paints the second bonus card with the bonus card's team color
         setCards(cards.map(c => {
           if (c.id !== card.id) return c;
-          // קלף שני של בונוס: תמיד צובע, גם אם זה קלף הפסד
+          // Second bonus card: always paint, even if it's a lose card
           return { ...c, color: bonusTeam, revealed: true, isBonusSecondClick: true };
         }));
         toastMsg = `+1`;
@@ -157,7 +157,7 @@ function App() {
         return;
       }
 
-      // קלף ראשון
+  // First card
       if (card.type === "task" || card.type === "extra") {
         playSound(card.type === "task" ? "task" : "bonus");
   paintCard(card, currentTeam);
@@ -198,12 +198,12 @@ function App() {
       const winners = counts.filter(c => c.score === maxScore && maxScore > 0).map(c => c.team);
       let modalColor = '';
       if (winners.length === 1) {
-        // קבוצה אחת מנצחת
+  // One team wins
         modalColor = modalColors[winners[0]];
       } else if (winners.length > 1) {
-        // תיקו בין קבוצות
+  // Tie between teams
         const colors = winners.map(w => {
-          // הפוך לגרדיאנט צבעים
+          // Convert to color gradient
           if (w === 'pink') return '#ff00aa';
           if (w === 'yellow') return '#facc15';
           if (w === 'turquoise') return '#5ce1e6';
@@ -232,16 +232,16 @@ function App() {
         backgroundRepeat: 'no-repeat',
       }}
     >
-      {/* לוגו בפינה השמאלית עליונה */}
+  {/* Logo in top left corner */}
       <div className="fixed top-4 left-4 z-50">
         <img src={Logo} alt="לוגו" style={{ width: 120, height: 120, filter: 'drop-shadow(0 0 16px #fff) drop-shadow(0 0 32px #fff)' }} />
       </div>
       <div className="flex justify-center items-center" style={{ height: 180, width: 180, margin: '0 auto' }}>
       </div>
-      {/* כפתורים קבועים בפינה הימנית עליונה */}
+  {/* Fixed buttons in the top right corner */}
       <div className="fixed top-7 right-4 z-50 flex gap-3 items-start">
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: '18px', marginRight: '10px' }}>
-          {/* גלגל כיתות */}
+          {/* Class wheel */}
           <div style={{ width: 90, maxWidth: '18vw', transform: 'scale(0.18)', marginTop: -200 }}>
             <ClassWheel
               mustStartClassSpinning={mustStartClassSpinning}
@@ -258,7 +258,7 @@ function App() {
               }}
             />
           </div>
-          {/* גלגל קבוצות */}
+          {/* Group wheel */}
           <div style={{ width: 90, maxWidth: '18vw', transform: 'scale(0.18)', marginTop: -200 }}>
             <GroupWheel
               mustStartSpinning={mustStartSpinning}
@@ -277,7 +277,7 @@ function App() {
               }}
             />
           </div>
-          {/* כפתורים */}
+          {/* Action buttons */}
           <ActionButtons
             onShowScore={() => setShowScore(true)}
             onClassSpin={handleClassSpinClick}
@@ -286,7 +286,7 @@ function App() {
           />
         </div>
       </div>
-      {/* גריד קלפים */}
+  {/* Cards grid */}
       <div className="flex justify-center items-center w-full">
         <CardsGrid
           cards={cards}
@@ -299,7 +299,7 @@ function App() {
           Grey={Grey}
         />
       </div>
-      {/* פופאפ ניקוד */}
+  {/* Score popup */}
   <ScoreModal showScore={showScore} setShowScore={setShowScore} getTeamScore={getTeamScore} />
       {/* Toast */}
       {toast && (

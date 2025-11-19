@@ -10,7 +10,7 @@ export function useToast() {
   const [toast, setToast] = useState<ToastState | null>(null);
   const [pendingToast, setPendingToast] = useState<ToastState | null>(null);
 
-  // הצגת טוסט לאחר סגירת מודל
+  // Show toast after modal closes
   const showToastAfterModal = useCallback((modalOpen: boolean) => {
     if (!modalOpen && pendingToast) {
       setToast(pendingToast);

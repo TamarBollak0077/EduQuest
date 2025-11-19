@@ -4,7 +4,7 @@ import { Card, CardType, TeamColor } from "../App";
 export const teams: TeamColor[] = ["pink", "yellow", "turquoise"];
 
 export function useGameLogic() {
-  // יצירת קלפים חדשים
+  // create new cards
   const generateCards = (): Card[] => {
     const totalCards = 30;
     const maxLose = Math.floor(totalCards * 0.25);
@@ -21,7 +21,7 @@ export function useGameLogic() {
       }
       cards.push({ id: i, type, color: "", revealed: false });
     }
-    // ערבוב קלפים
+    // Shuffle cards
     for (let i = cards.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [cards[i], cards[j]] = [cards[j], cards[i]];
@@ -29,7 +29,7 @@ export function useGameLogic() {
     return cards;
   };
 
-  // טעינת מצב המשחק מה-localStorage אם קיים
+  // Load game state from localStorage if exists
   const loadGameState = () => {
     try {
       const saved = localStorage.getItem('eduquest-game-state');
@@ -46,7 +46,7 @@ export function useGameLogic() {
     localStorage.setItem('eduquest-game-state', JSON.stringify({ cards }));
   }, [cards]);
 
-  // ניקוד דינמי עם הורדה לקלף הפסד
+  // Dynamic scoring with deduction for lose card
   const getTeamScore = (team: TeamColor) => {
     let score = 0;
     cards.forEach(card => {
@@ -76,7 +76,7 @@ export function useGameLogic() {
     return winners.length === 1 ? winners[0].toUpperCase() : "";
   };
 
-  // פונקציה לצביעת קלף
+  // Function to paint a card
   const paintCard = (card: Card, currentTeam: TeamColor, isBonusSecondClick: boolean = false) => {
     setCards(cards.map(c => {
       if (c.id !== card.id) return c;
@@ -88,7 +88,7 @@ export function useGameLogic() {
     }));
   };
 
-  // פונקציה להתחלת משחק חדש
+  // Function to start a new game
   const startNewGame = () => {
     setCards(generateCards());
     localStorage.removeItem('eduquest-game-state');

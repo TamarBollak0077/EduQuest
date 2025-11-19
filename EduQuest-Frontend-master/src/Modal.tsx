@@ -18,7 +18,7 @@ const Modal: React.FC<ModalProps> = ({
   groupColor = ''
 }) => {
   console.log('Modal groupColor:', groupColor);
-  // ממפה שם צבע לערך HEX
+  // Maps color name to HEX value
   const colorMap: Record<string, string> = {
     pink: '#ff00aa',
     yellow: '#facc15',
@@ -48,7 +48,7 @@ const Modal: React.FC<ModalProps> = ({
         {message}
       </p>
 
-      {/* כפתורי הצלחה/כישלון */}
+  {/* Success/Failure buttons */}
       {showOptions && (
         <div className="flex justify-center gap-4 mt-8">
 
@@ -88,7 +88,7 @@ const Modal: React.FC<ModalProps> = ({
       )}
     </div>
 
-    {/* אנימציה */}
+  {/* Animation */}
     <style>{`
       @keyframes fadeIn {
         from { opacity: 0; transform: scale(0.92); }

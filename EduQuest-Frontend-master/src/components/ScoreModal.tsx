@@ -36,9 +36,9 @@ const ScoreModal: React.FC<ScoreModalProps> = ({ showScore, setShowScore, getTea
                 animationDuration={800}
               >
                 {[
-                  { name: "ורוד", color: "#ff00aaff" },
-                  { name: "צהוב", color: "#facc15" },
-                  { name: "טורקיז", color: "#5ce1e6" }
+                  { name: "Pink", color: "#ff00aaff" },
+                  { name: "Yellow", color: "#facc15" },
+                  { name: "Turquoise", color: "#5ce1e6" }
                 ].map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.color} />
                 ))}

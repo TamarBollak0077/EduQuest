@@ -1,3 +1,26 @@
+/* Toast float up animation */
+@keyframes toast-up {
+  0% {
+    transform: translateY(60px) scale(0.95);
+    opacity: 0;
+  }
+  60% {
+    transform: translateY(-8px) scale(1.04);
+    opacity: 1;
+  }
+  80% {
+    transform: translateY(-2px) scale(1.01);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-toast-up {
+  animation: toast-up 0.7s cubic-bezier(0.23, 1, 0.32, 1);
+}
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -66,7 +89,7 @@ html, body, #root {
   100% {
     width: 300%;
     height: 300%;
-    opacity: 0; /* מחליק חזרה כדי שהגל לא יסתיר את הצבע */
+    opacity: 0; 
   }
 }
 
