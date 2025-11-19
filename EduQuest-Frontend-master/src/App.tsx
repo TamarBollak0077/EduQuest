@@ -18,6 +18,10 @@ import Grey from './assets/Grey.png';
 import Turquoise from './assets/Turquoise.png';
 import Yellow from './assets/Yellow.png';
 import CardsGrid from './components/CardsGrid';
+import GroupWheel from './components/GroupWheel';
+import ClassWheel from './components/ClassWheel';
+import Toast from './components/Toast';
+import ScoreModal from './components/ScoreModal';
 
 // הגדרות גלובליות ל-TypeScript עבור window.__spinAudio ו-window.__victoryAudio
 declare global {
@@ -36,42 +40,6 @@ declare global {
   }
 }
 export { };
-// Toast component
-function Toast({ message, color, type, onClose }: { message: string; color: string; type: "win" | "lose"; onClose: () => void }) {
-  useEffect(() => {
-    const timer = setTimeout(onClose, 1200);
-    return () => clearTimeout(timer);
-  }, [onClose]);
-  return (
-    <div
-      className={`fixed left-1/2 top-12  px-7 py-4 rounded-xl shadow-2xl text-white text-2xl font-bold z-50 animate-toast-up flex items-center gap-3 ${type === "lose" ? "border-2 border-red-500" : "border-2 border-green-500"}`}
-      style={{ background: color, minWidth: 90, textAlign: 'center', boxShadow: '0 8px 32px rgba(0,0,0,0.18)' }}
-    >
-      {type === "lose" ? (
-        <span className="text-3xl">❌</span>
-      ) : (
-        <span className="text-3xl">✅</span>
-      )}
-      <span>{message}</span>
-    </div>
-  );
-}
-// Toast up animation
-const style = document.createElement('style');
-style.innerHTML = `
-@keyframes toast-up {
-  0% { transform: translateY(60px); opacity: 0; }
-  30% { opacity: 1; }
-  100% { transform: translateY(0); opacity: 1; }
-}
-.animate-toast-up {
-  animation: toast-up 0.5s cubic-bezier(.68,-0.55,.27,1.55);
-}
-`;
-if (!document.head.querySelector('style[data-toast]')) {
-  style.setAttribute('data-toast', '');
-  document.head.appendChild(style);
-}
 
 
 export type CardType = "task" | "extra" | "lose";
@@ -429,18 +397,12 @@ function App() {
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: '18px', marginRight: '10px' }}>
           {/* גלגל כיתות */}
           <div style={{ width: 90, maxWidth: '18vw', transform: 'scale(0.18)', marginTop: -200 }}>
-            <Wheel
-              mustStartSpinning={mustStartClassSpinning}
-              prizeNumber={classPrizeNumber}
-              data={classNumbers.map(num => ({ option: num.toString() }))}
-              backgroundColors={["#facc15", "#5ce1e6", "#ff00aa", "#ff74d1ff", "#facc15", "#5ce1e6", "#ff00aa"]}
-              textColors={["#000"]}
-              fontSize={60}
-              spinDuration={0.5}
-
+            <ClassWheel
+              mustStartClassSpinning={mustStartClassSpinning}
+              classPrizeNumber={classPrizeNumber}
+              classNumbers={classNumbers}
               onStopSpinning={() => {
                 setMustStartClassSpinning(false);
-                // Stop spin sound and play ding
                 if (window.__spinAudio && typeof window.__spinAudio.pause === "function") {
                   window.__spinAudio.pause();
                   window.__spinAudio.currentTime = 0;
@@ -452,15 +414,11 @@ function App() {
           </div>
           {/* גלגל קבוצות */}
           <div style={{ width: 90, maxWidth: '18vw', transform: 'scale(0.18)', marginTop: -200 }}>
-            <Wheel
+            <GroupWheel
               mustStartSpinning={mustStartSpinning}
               prizeNumber={prizeNumber}
-              data={teams.map(() => ({ option: "" }))}
-              backgroundColors={teams.map(team => toastColors[team])}
-              textColors={["#000"]}
-              fontSize={32}
-              pointerProps={{}}
-              spinDuration={0.3}
+              teams={teams}
+              toastColors={toastColors}
               onStopSpinning={() => {
                 setMustStartSpinning(false);
                 setCurrentTeam(teams[prizeNumber]);
@@ -533,46 +491,7 @@ function App() {
       </div>
 
       {/* פופאפ ניקוד */}
-      {showScore && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30" onClick={() => setShowScore(false)}>
-          <div className="w-full max-w-md bg-white/90 backdrop-blur-md rounded-2xl p-6 shadow-2xl relative" onClick={e => e.stopPropagation()}>
-            <button className="absolute top-3 left-3 text-xl font-bold text-gray-500 hover:text-black" onClick={() => setShowScore(false)}>
-              ✕
-            </button>
-            <h2 className="text-2xl font-bold mb-4 text-center">🏆 נקודות</h2>
-            <div style={{ width: "100%", height: 220 }}>
-              <ResponsiveContainer width="100%" height={220}>
-                <BarChart
-                  data={[
-                    { name: "ורוד", score: getTeamScore("pink"), color: "#ff00aaff" },
-                    { name: "צהוב", score: getTeamScore("yellow"), color: "#facc15" },
-                    { name: "טורקיז", score: getTeamScore("turquoise"), color: "#5ce1e6" },
-                  ]}
-                >
-                  <CartesianGrid strokeDasharray="3 3" stroke="#ddd" />
-                  <XAxis dataKey="name" tick={{ fill: "#444", fontSize: 14 }} />
-                  <YAxis tick={{ fill: "#444" }} />
-                  <Tooltip />
-                  <Bar
-                    dataKey="score"
-                    radius={[10, 10, 0, 0]}
-                    isAnimationActive={true}
-                    animationDuration={800}
-                  >
-                    {[
-                      { name: "ורוד", color: "#ff00aaff" },
-                      { name: "צהוב", color: "#facc15" },
-                      { name: "טורקיז", color: "#5ce1e6" }
-                    ].map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        </div>
-      )}
+  <ScoreModal showScore={showScore} setShowScore={setShowScore} getTeamScore={getTeamScore} />
       {/* Toast */}
       {toast && (
         <Toast message={toast.message} color={toast.color} type={toast.type} onClose={() => setToast(null)} />
